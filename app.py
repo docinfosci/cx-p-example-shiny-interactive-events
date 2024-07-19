@@ -7,10 +7,10 @@ from canvasxpress.canvas import CanvasXpress
 
 # The latest version without redraw issues in Shiny.
 # Actively being explored.
-CanvasXpress.set_cdn_edition("49.8")
+# CanvasXpress.set_cdn_edition("49.8")
 
 from canvasxpress.js.function import CXEvent
-from canvasxpress.plot import graph
+from canvasxpress.plot import graph, convert_to_reproducible_json
 
 import pandas
 
@@ -65,8 +65,10 @@ def server(input, output, session):
         """
         Called by Shiny to render the house_statistic_matrix data_frame UI element.
         """
+        data = get_sample_dataframe()
+        data = data.reset_index()
         return render.DataTable(
-            get_sample_dataframe(),
+            data,
             selection_mode="row",
         )
 
@@ -90,7 +92,7 @@ def server(input, output, session):
         selected_row_candidate = house_statistic_matrix.cell_selection()["rows"]
         if len(selected_row_candidate) == 1:
             selected_row = selected_row_candidate[0]
-            return f"Index: {selected_row}\n{list(get_sample_dataframe().iloc[selected_row])}"
+            return f"Index: {selected_row}\n{list(get_sample_dataframe().reset_index().iloc[selected_row])}"
 
     @reactive.effect
     def print_values_to_console():
@@ -125,29 +127,34 @@ def server(input, output, session):
             "xAxisTitle": "Alcohol",
             "yAxis": ["Tobacco"],
             "yAxisTitle": "Tobacco",
+            "theme": "Stata",
+            "toolbarType": "fixed",
         }
 
         # If a row is selected then identify the data coordinate (row x column) and add it to the config.
         selected_row_candidate = house_statistic_matrix.cell_selection()["rows"]
-        if len(selected_row_candidate) == 1:
+        if len(selected_row_candidate) > 0:
             selected_row = selected_row_candidate[0]
             configuration["selectedDataPoints"] = [
                 [ xyz_data["y"]["vars"][selected_row], xyz_data["y"]["smps"][0] ],
             ]
 
-        # Render the graph.
-        return graph(
-            CanvasXpress(
-                data=xyz_data,
-                config=configuration,
-                events=[
-                    CXEvent(
-                        id="click",
-                        script= "Shiny.setInputValue('point_selected', o.y);"
-                    )
-                ],
-            )
+        chart = CanvasXpress(
+            render_to="example",
+            data=xyz_data,
+            config=configuration,
+            events=[
+                CXEvent(
+                    id="click",
+                    script= "Shiny.setInputValue('point_selected', o.y);"
+                )
+            ],
         )
+
+        print(convert_to_reproducible_json(chart))
+
+        # Render the graph.
+        return graph(chart)
 
 def get_ui():
     """
@@ -156,7 +163,7 @@ def get_ui():
     return ui.page_fluid(
         ui.row(
             ui.column(
-                5,
+                4,
                 "The chart displays here when a row is selected.",
                 ui.output_ui("chart_view")
             ),
@@ -166,7 +173,7 @@ def get_ui():
                 ui.output_data_frame("house_statistic_matrix")
             ),
             ui.column(
-                2,
+                4,
                 "Select a table row to see the values.",
                 ui.output_text_verbatim("selected_row_value"),
                 "Select a chart point to see the values.",
