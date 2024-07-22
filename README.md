@@ -3,8 +3,8 @@ An example project featuring CX-P, Shiny-P, and custom event support to trigger 
 
 To configure the project run:
 
-    chmod +x ./setup.bat
-    ./setup.bat
+    chmod +x ./setup.sh
+    ./setup.sh
 
 Then run the app:
 
