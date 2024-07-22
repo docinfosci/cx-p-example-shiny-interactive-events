@@ -5,8 +5,7 @@ from shiny import App, ui, render, reactive
 
 from canvasxpress.canvas import CanvasXpress
 
-# The latest version without redraw issues in Shiny.
-# Actively being explored.
+# Uncomment and set to a prior CX version to use the corresponding JS and CSS libraries.
 # CanvasXpress.set_cdn_edition("49.8")
 
 from canvasxpress.js.function import CXEvent
@@ -140,7 +139,7 @@ def server(input, output, session):
             ]
 
         chart = CanvasXpress(
-            render_to="example",
+            render_to="example", # optional for a Shiny app
             data=xyz_data,
             config=configuration,
             events=[
