@@ -5,4 +5,4 @@
 source venv/bin/activate
 python --version
 
-pip install -r requirements.txt
+pip install -U -r requirements.txt
