@@ -4,14 +4,15 @@ from io import StringIO
 from shiny import App, ui, render, reactive
 
 from canvasxpress.canvas import CanvasXpress
-
-# Uncomment and set to a prior CX version to use the corresponding JS and CSS libraries.
-# CanvasXpress.set_cdn_edition("49.8")
-
 from canvasxpress.js.function import CXEvent
+from canvasxpress.render.shiny import output_canvasxpress
 from canvasxpress.plot import graph, convert_to_reproducible_json
 
+# Uncomment and set to a prior CX version to use the corresponding JS and CSS libraries.
+# CanvasXpress.set_cdn_edition("49.0")
+
 import pandas
+
 
 def get_sample_dataframe():
     """
@@ -59,6 +60,7 @@ def server(input, output, session):
     """
     The standard Shiny reactivity function.
     """
+
     @render.data_frame
     def house_statistic_matrix():
         """
@@ -127,7 +129,6 @@ def server(input, output, session):
             "yAxis": ["Tobacco"],
             "yAxisTitle": "Tobacco",
             "theme": "Stata",
-            "toolbarType": "fixed",
         }
 
         # If a row is selected then identify the data coordinate (row x column) and add it to the config.
@@ -135,17 +136,17 @@ def server(input, output, session):
         if len(selected_row_candidate) > 0:
             selected_row = selected_row_candidate[0]
             configuration["selectedDataPoints"] = [
-                [ xyz_data["y"]["vars"][selected_row], xyz_data["y"]["smps"][0] ],
+                [xyz_data["y"]["vars"][selected_row], xyz_data["y"]["smps"][0]],
             ]
 
         chart = CanvasXpress(
-            render_to="example", # optional for a Shiny app
+            render_to="example",  # optional for a Shiny app
             data=xyz_data,
             config=configuration,
             events=[
                 CXEvent(
                     id="click",
-                    script= "Shiny.setInputValue('point_selected', o.y);"
+                    script="Shiny.setInputValue('point_selected', o.y);",
                 )
             ],
         )
@@ -154,6 +155,7 @@ def server(input, output, session):
 
         # Render the graph.
         return graph(chart)
+
 
 def get_ui():
     """
@@ -164,21 +166,22 @@ def get_ui():
             ui.column(
                 4,
                 "The chart displays here when a row is selected.",
-                ui.output_ui("chart_view")
+                output_canvasxpress("chart_view"),
             ),
             ui.column(
                 4,
                 "Select a row point to draw the chart with the value pre-selected.",
-                ui.output_data_frame("house_statistic_matrix")
+                ui.output_data_frame("house_statistic_matrix"),
             ),
             ui.column(
                 4,
                 "Select a table row to see the values.",
                 ui.output_text_verbatim("selected_row_value"),
                 "Select a chart point to see the values.",
-                ui.output_text_verbatim("selected_point_value")
-            )
+                ui.output_text_verbatim("selected_point_value"),
+            ),
         ),
     )
+
 
 app = App(get_ui(), server)
