@@ -1,17 +1,18 @@
-import json
 from io import StringIO
+from pathlib import Path
 
-from shiny import App, ui, render, reactive
+from shiny import App, ui, render
 
 from canvasxpress.canvas import CanvasXpress
 
 # Uncomment and set to a prior CX version to use the corresponding JS and CSS libraries.
-# CanvasXpress.set_cdn_edition("49.8")
+# CanvasXpress.set_cdn_edition("49.0")
 
 from canvasxpress.js.function import CXEvent
 from canvasxpress.plot import graph, convert_to_reproducible_json
 
 import pandas
+
 
 def get_sample_dataframe():
     """
@@ -85,17 +86,15 @@ def server(input, output, session):
             "yAxis": ["Tobacco"],
             "yAxisTitle": "Tobacco",
             "theme": "Stata",
-            "toolbarType": "fixed",
         }
 
         chart = CanvasXpress(
-            render_to="example", # optional for a Shiny app
+            # render_to="example", # optional for a Shiny app
             data=xyz_data,
             config=configuration,
             events=[
                 CXEvent(
-                    id="click",
-                    script= "Shiny.setInputValue('point_selected', o.y);"
+                    id="click", script="Shiny.setInputValue('point_selected', o.y);"
                 )
             ],
         )
@@ -105,12 +104,25 @@ def server(input, output, session):
         # Render the graph.
         return graph(chart)
 
+
+def output_canavsxpress(id) -> ui.TagList:
+    return ui.TagList(
+        ui.head_content(
+            ui.tags.link(
+                href="https://www.canvasxpress.org/dist/canvasXpress.css",
+                rel="stylesheet",
+            ),
+            ui.tags.script(src="https://www.canvasxpress.org/dist/canvasXpress.min.js"),
+        ),
+        ui.output_ui(id),
+    )
+
+
 def get_ui():
     """
     Defines the UI to be presented by the Shiny application.
     """
-    return ui.page_fluid(
-        ui.output_ui("chart_view"),
-    )
+    return ui.page_fluid(output_canavsxpress("chart_view"))
 
-app = App(get_ui(), server)
+
+app = App(get_ui(), server, static_assets=Path(__file__).parent)
